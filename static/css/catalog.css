@@ -1,0 +1,300 @@
+/* --- Catalog Page Layout --- */
+.catalog-page {
+  padding-top: 80px; 
+  background-color: var(--bg-color);
+}
+
+/* --- Big Search Bar --- */
+.search-hero {
+  padding: 60px 5% 20px;
+  text-align: center;
+  background-color: var(--secondary-color);
+  border-bottom: 1px solid #eaeaea;
+}
+
+.search-bar-wrapper {
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 25px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.8rem;
+  color: #888;
+}
+
+.search-bar-wrapper input {
+  width: 100%;
+  padding: 22px 25px 22px 65px;
+  font-size: 1.3rem;
+  font-family: var(--font-main);
+  border: 1px solid #ddd;
+  border-radius: 50px;
+  outline: none;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  transition: all 0.3s ease;
+}
+
+.search-bar-wrapper input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.search-count {
+  margin-top: 15px;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+/* --- Split Profile Button Layout --- */
+.profile-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.profile-action-group {
+  display: flex;
+  align-items: center;
+  gap: 5px; /* Space between Login text and the v arrow */
+}
+
+.login-btn {
+  display: flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.login-btn:hover {
+  color: var(--accent-color);
+}
+
+.icon-label {
+  font-size: 0.95rem;
+  margin-left: 6px;
+}
+
+/* --- Always Visible Dropdown Caret (v) --- */
+.dropdown-caret {
+  background: none;
+  border: none;
+  /* Set an explicit color so it never disappears */
+  color: #fff; 
+  cursor: pointer;
+  font-size: 1.2rem; /* Made slightly larger for easier clicking */
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  margin-left: 2px;
+  transition: color 0.3s ease;
+  opacity: 1 !important; 
+  visibility: visible !important;
+}
+
+/* When the header becomes solid white on scroll, turn the 'v' dark */
+header.scrolled .dropdown-caret {
+  color: var(--primary-color);
+}
+
+/* Hover effect just for a nice UI feel */
+.dropdown-caret:hover {
+  color: var(--accent-color);
+}
+/* --- Profile Dropdown Menu --- */
+.profile-dropdown {
+  position: absolute;
+  top: 150%;
+  right: -10px;
+  background-color: #fff;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  min-width: 220px;
+  border-radius: 8px;
+  padding: 10px 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  z-index: 2000;
+}
+
+.profile-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.profile-dropdown a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  font-size: 0.95rem;
+  color: var(--text-color);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.profile-dropdown a i {
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.profile-dropdown a:hover {
+  background-color: var(--secondary-color);
+  color: var(--accent-color);
+}
+
+.profile-dropdown a:hover i {
+  color: var(--accent-color);
+}
+
+/* --- Login Modal Styles --- */
+.modal-overlay {
+  position: fixed;
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: none; /* Hidden by default */
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-overlay.show {
+  display: flex;
+  animation: fadeIn 0.3s forwards;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 35px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+  color: var(--text-color);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.close-modal {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.3s;
+}
+
+.close-modal:hover {
+  color: var(--primary-color);
+}
+
+.modal-content h2 { 
+  margin-bottom: 25px; 
+  text-align: center; 
+  font-weight: 500;
+}
+
+.input-group { 
+  margin-bottom: 20px; 
+}
+
+.input-group label { 
+  display: block; 
+  margin-bottom: 8px; 
+  font-size: 0.95rem; 
+}
+
+.input-group input { 
+  width: 100%; 
+  padding: 12px; 
+  border: 1px solid #ddd; 
+  border-radius: 4px;
+  font-family: var(--font-main);
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+  border-color: var(--accent-color);
+}
+
+.btn-login-submit { 
+  width: 100%; 
+  padding: 14px; 
+  background: var(--primary-color); 
+  color: #fff; 
+  border: none; 
+  border-radius: 4px;
+  cursor: pointer; 
+  text-transform: uppercase; 
+  letter-spacing: 1px;
+  font-family: inherit;
+  transition: background 0.3s;
+}
+
+.btn-login-submit:hover {
+  background: var(--accent-color);
+}
+
+.modal-footer-text { 
+  text-align: center; 
+  margin-top: 20px; 
+  font-size: 0.9rem; 
+}
+
+.modal-footer-text a {
+  color: var(--accent-color);
+  text-decoration: underline;
+}
+/* --- Centered Search Container --- */
+.header-search-wrapper {
+  position: relative;
+  width: 50%; /* Moved your 50% width here to control the whole block */
+  justify-self: center; /* This centers it perfectly in your header */
+  margin: 0 auto;
+}
+
+.header-search-wrapper i {
+  position: absolute;
+  left: 15px;
+  top: 50%; /* Changed from 20% to 50% so the icon is perfectly centered vertically */
+  transform: translateY(-50%);
+  color: var(--primary-color);
+  font-size: 1.1rem; 
+}
+
+.header-search-wrapper input {
+  width: 100%; /* This fills the 50% container exactly to your custom size */
+  padding: 8px 20px 8px 45px; 
+  border: 1.5px solid #ccc;
+  border-radius: 50px; 
+  font-size: 0.95rem; 
+  font-family: var(--font-main);
+  color: var(--text-color);
+  outline: none;
+  background-color: var(--secondary-color); 
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+}
+
+.header-search-wrapper input::placeholder {
+  color: #666; 
+}
+
+.header-search-wrapper input:focus {
+  border-color: var(--accent-color); 
+  background-color: #fff;
+  box-shadow: 0 4px 15px rgba(201, 168, 124, 0.25); 
+}

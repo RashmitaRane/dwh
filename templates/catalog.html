@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Catalog | Divine Watch House</title>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <link rel="stylesheet" href="../static/css/style.css">
+  <link rel="stylesheet" href="../static/css/catalog.css">
+</head>
+<body class="catalog-page">
+
+  <header class="scrolled catalog-header">
+    <a href="../index.html" class="logo">
+      <img src="../static/images/logo.png" alt="Watch DWH Logo">
+    </a>
+
+    <div class="header-search-wrapper">
+      <i class="ph ph-magnifying-glass"></i>
+      <input type="text" id="catalog-search" placeholder="Search HMT models..." autofocus>
+    </div>
+    
+    <div class="header-icons">
+      <div class="profile-wrapper">
+        <div class="profile-action-group">
+          <a href="#" title="Login" id="login-trigger" class="login-btn">
+            <i class="ph ph-user"></i>
+            <span class="icon-label">Login</span>
+          </a>
+          <button id="dropdown-trigger" class="dropdown-caret">
+            <i class="ph ph-caret-down"></i>
+          </button>
+        </div>
+        
+        <div class="profile-dropdown" id="profile-dropdown">
+          <div class="dropdown-divider"></div> <a href="#"><i class="ph ph-user-plus"></i> New User?</a>
+          <a href="#"><i class="ph ph-list-numbers"></i> Orders</a>
+          <a href="#"><i class="ph ph-heart"></i> Wishlist</a>
+          <a href="#"><i class="ph ph-bell"></i> Notifications</a>
+          <a href="../index.html"><i class="ph ph-house"></i> Home</a>
+          <a href="../index.html#about"><i class="ph ph-info"></i> About Us</a>
+        </div>
+      </div>
+      
+      <div class="cart-wrapper" onclick="toggleCart()" title="Cart">
+        <i class="ph ph-shopping-cart"></i>
+        <span class="cart-badge" id="cart-badge">0</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="catalog-main">
+    <section class="section catalog-section">
+      <div class="catalog-header-row">
+      
+        <p id="search-count" class="search-count"></p>
+      </div>
+
+      <div class="product-grid" id="catalog-grid">
+        </div>
+    </section>
+  </main>
+  
+  <div id="cart-sidebar" class="cart-sidebar">
+    <div class="cart-header">
+      <h3>Your Cart</h3>
+      <button class="close-cart" onclick="toggleCart()">✕</button>
+    </div>
+    <div id="cart-items-container" class="cart-content">
+      <p class="empty-msg">Your cart is currently empty.</p>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total:</span>
+        <span id="cart-total-price">₹0</span>
+      </div>
+      <button class="btn-checkout">Checkout Now</button>
+    </div>
+  </div>
+  <div id="cart-overlay" class="cart-overlay" onclick="toggleCart()"></div>
+
+  <div id="login-modal" class="modal-overlay">
+    <div class="modal-content">
+      <span class="close-modal" id="close-login">&times;</span>
+      <h2>Welcome Back</h2>
+      <form id="login-form">
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="Enter your email" required>
+        </div>
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required>
+        </div>
+        <button type="submit" class="btn-login-submit">Login</button>
+      </form>
+      <p class="modal-footer-text">Don't have an account? <a href="#">Sign up here</a></p>
+    </div>
+  </div>
+
+  <script src="../static/js/catalog.js"></script>
+</body>
+</html>
