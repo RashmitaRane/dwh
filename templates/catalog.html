@@ -1,76 +1,124 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Product Catalog | Divine Watch House</title>
+  <title>Catalog | Divine Watch House</title>
   <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   
-  <link rel="stylesheet" href="../static/css/style.css">
-  <link rel="stylesheet" href="../static/css/catalog.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=4.0">
+  <link rel="stylesheet" href="{% static 'css/catalog.css' %}?v=4.0">
 </head>
 <body class="catalog-page">
 
-  <header class="scrolled catalog-header">
-    <a href="../index.html" class="logo">
-      <img src="../static/images/logo.png" alt="Watch DWH Logo">
-    </a>
+  <div class="announcement-bar" style="position: relative; z-index: 1001;">
+    <span class="marquee-text">Free shipping in India on all HMT watches!</span>
+  </div>
 
-    <div class="header-search-wrapper">
-      <i class="ph ph-magnifying-glass"></i>
-      <input type="text" id="catalog-search" placeholder="Search HMT models..." autofocus>
-    </div>
+  <div id="titan-premium-header">
     
-    <div class="header-icons">
-      <div class="profile-wrapper">
-        <div class="profile-action-group">
-          <a href="#" title="Login" id="login-trigger" class="login-btn">
-            <i class="ph ph-user"></i>
-            <span class="icon-label">Login</span>
-          </a>
-          <button id="dropdown-trigger" class="dropdown-caret">
-            <i class="ph ph-caret-down"></i>
-          </button>
+    <video autoplay loop muted playsinline class="header-bg-video">
+      <source src="{% static 'images/bannercatalog.mp4' %}" type="video/mp4">
+    </video>
+    
+    <div class="header-video-overlay"></div>
+
+    <div class="header-content-wrapper">
+      
+      <div class="header-main-row">
+        <a href="{% url 'index' %}" class="dwh-logo">
+          <i class="ph ph-watch"></i>
+          <span>DWH</span>
+        </a>
+
+        <div class="titan-search-container">
+          <form method="GET" action="{% url 'catalog' %}">
+              <i class="ph ph-magnifying-glass search-icon-left"></i>
+              <input type="text" name="q" value="{{ query }}" id="animated-search" placeholder="">
+              <i class="ph ph-microphone search-icon-right"></i>
+          </form>
         </div>
         
-        <div class="profile-dropdown" id="profile-dropdown">
-          <div class="dropdown-divider"></div> <a href="#"><i class="ph ph-user-plus"></i> New User?</a>
-          <a href="#"><i class="ph ph-list-numbers"></i> Orders</a>
-          <a href="#"><i class="ph ph-heart"></i> Wishlist</a>
-          <a href="#"><i class="ph ph-bell"></i> Notifications</a>
-          <a href="../index.html"><i class="ph ph-house"></i> Home</a>
-          <a href="../index.html#about"><i class="ph ph-info"></i> About Us</a>
+        <div class="titan-actions">
+          
+          <div class="action-item account-wrapper" id="account-trigger">
+            <i class="ph ph-user"></i>
+            <span>Account</span>
+            
+            <div class="account-dropdown" id="account-dropdown">
+              <div class="dropdown-header">
+                <h4>Welcome!</h4>
+                <p>Enjoy A Personalized Timekeeping Experience.</p>
+                <a href="#" class="btn-login" id="login-trigger-btn">LOGIN/SIGNUP</a>
+              </div>
+              <div class="dropdown-links">
+                <a href="#">Notification</a>
+                <a href="#">Wishlist</a>
+                <a href="#">FAQ</a>
+              </div>
+            </div>
+          </div>
+
+          <a href="#" class="action-item">
+            <i class="ph ph-heart"></i>
+            <span>Wishlist</span>
+          </a>
+          
+          <div class="action-item cart-wrapper" onclick="toggleCart()">
+            <div class="icon-with-badge">
+              <i class="ph ph-handbag"></i>
+              <span class="cart-badge" id="cart-badge">0</span>
+            </div>
+            <span>Cart</span>
+          </div>
+
+          <a href="#" class="action-item">
+            <i class="ph ph-package"></i>
+            <span>Track Order</span>
+          </a>
+
         </div>
       </div>
-      
-      <div class="cart-wrapper" onclick="toggleCart()" title="Cart">
-        <i class="ph ph-shopping-cart"></i>
-        <span class="cart-badge" id="cart-badge">0</span>
       </div>
+  </div>
+
+  <section class="section" style="padding-top: 40px;">
+    <div class="product-grid" id="catalog-grid">
+        {% for watch in products %}
+        <div class="product-card reveal-card active">
+            <div class="product-image-wrapper">
+                {% if watch.is_bestseller %}
+                <div class="badge">Bestseller</div>
+                {% endif %}
+                {% if watch.image %}
+                    <img src="{{ watch.image.url }}" alt="{{ watch.name }}">
+                {% else %}
+                    <img src="{% static 'images/logo.png' %}" alt="Placeholder">
+                {% endif %}
+            </div>
+            <div class="product-info">
+                <h3>{{ watch.name }}</h3>
+                <div class="price">₹{{ watch.price }}</div>
+                <form action="{% url 'add_to_cart' watch.id %}" method="POST" style="width: 100%;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-add">Add to cart</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <p style="grid-column: 1/-1; text-align: center; color: #777;">No watches found matching your search.</p>
+        {% endfor %}
     </div>
-  </header>
+  </section>
 
-  <main class="catalog-main">
-    <section class="section catalog-section">
-      <div class="catalog-header-row">
-      
-        <p id="search-count" class="search-count"></p>
-      </div>
-
-      <div class="product-grid" id="catalog-grid">
-        </div>
-    </section>
-  </main>
-  
   <div id="cart-sidebar" class="cart-sidebar">
     <div class="cart-header">
       <h3>Your Cart</h3>
       <button class="close-cart" onclick="toggleCart()">✕</button>
     </div>
-    <div id="cart-items-container" class="cart-content">
-      <p class="empty-msg">Your cart is currently empty.</p>
-    </div>
+    <div id="cart-items-container" class="cart-content"></div>
     <div class="cart-footer">
       <div class="cart-total">
         <span>Total:</span>
@@ -81,25 +129,45 @@
   </div>
   <div id="cart-overlay" class="cart-overlay" onclick="toggleCart()"></div>
 
-  <div id="login-modal" class="modal-overlay">
-    <div class="modal-content">
-      <span class="close-modal" id="close-login">&times;</span>
-      <h2>Welcome Back</h2>
-      <form id="login-form">
-        <div class="input-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" placeholder="Enter your email" required>
-        </div>
-        <div class="input-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" placeholder="Enter your password" required>
-        </div>
-        <button type="submit" class="btn-login-submit">Login</button>
-      </form>
-      <p class="modal-footer-text">Don't have an account? <a href="#">Sign up here</a></p>
+ <footer class="site-footer">
+    <div class="footer-top">
+      <div class="footer-col">
+        <h4>Quick links</h4>
+        <ul>
+          <li><a href="{% url 'catalog' %}">Shop now</a></li>
+          <li><a href="{% url 'index' %}#about">About us</a></li>
+          <li><a href="/admin">Admin Login</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <ul>
+          <li>
+            <a href="https://api.whatsapp.com/message/RVICHKUP5ZAOH1?autoload=1&app_absent=0&utm_source=ig" target="_blank">Contact us</a>
+          </li>
+          <li><a href="#faqs">FAQs</a></li>
+          <li><a href="#reviews">Customer Reviews</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Follow us</h4>
+        <ul>
+          <li>
+            <a href="https://www.instagram.com/divine_watch_house/" target="_blank" class="social-list-item">
+              <i class="ph ph-instagram-logo"></i> Instagram
+            </a>
+          </li>
+        </ul>
+      </div>
     </div>
-  </div>
+    <div class="footer-bottom">
+      <div class="footer-bottom-left">
+        <p>&copy; 2026, Divine Watch House</p>
+      </div>
+    </div>
+  </footer>
 
-  <script src="../static/js/catalog.js"></script>
+  <script src="{% static 'js/script.js' %}?v=4.0"></script>
+  <script src="{% static 'js/catalog.js' %}?v=4.0"></script>
 </body>
 </html>

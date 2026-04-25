@@ -1,13 +1,14 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>watch dwh | HMT Store</title>
+  <title>Divine Watch House | HMT Store</title>
   <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   
-  <link rel="stylesheet" href="./static/css/style.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
 
@@ -16,18 +17,19 @@
   </div>
 
   <header>
-    <a href="#" class="logo">
-      <img src="./static/images/logo.png" alt="Watch DWH Logo">
+    <a href="{% url 'index' %}" class="logo">
+      <img src="{% static 'images/logo.png' %}" alt="Watch DWH Logo">
     </a>
 
     <nav>
-      <a href="#">Shop</a>
-      <a href="#about">About Us</a>
+      <a href="{% url 'catalog' %}">Shop</a>
+      <a href="{% url 'index' %}#about">About Us</a>
       <a href="https://api.whatsapp.com/message/RVICHKUP5ZAOH1?autoload=1&app_absent=0&utm_source=ig" target="_blank">Contact</a>
     </nav>
     
     <div class="header-icons">
-    <a href="./templates/catalog.html" title="Search"><i class="ph ph-magnifying-glass"></i></a>      <a href="#" title="Profile"><i class="ph ph-user"></i></a>
+      <a href="{% url 'catalog' %}" title="Search"><i class="ph ph-magnifying-glass"></i></a>      
+      <a href="#" title="Profile"><i class="ph ph-user"></i></a>
       <a href="#" title="Latest Offers"><i class="ph ph-fire"></i></a>
       
       <div class="cart-wrapper" onclick="toggleCart()" title="Cart">
@@ -40,35 +42,35 @@
   <section class="hero-slider">
     <div class="slider-container" id="slider">
       
-      <div class="slide" style="background-image: url('../static/images/img2.png');">
+      <div class="slide" style="background-image: url('{% static 'images/img2.png' %}');">
         <div class="slide-content">
            <h1>HMT Himalaya</h1>
           <p>Named after the majestic peaks, this mechanical classic features a distinctive dial and robust build, perfect for everyday adventures.</p>
-          <button class="btn">Shop Now</button>
+          <a href="{% url 'catalog' %}" class="btn" style="text-decoration: none; display: inline-block;">Shop Now</a>
         </div>
       </div>
 
-      <div class="slide" style="background-image: url('../static/images/img1.png');">
+      <div class="slide" style="background-image: url('{% static 'images/img1.png' %}');">
         <div class="slide-content">
           <h1>HMT Janta</h1>
           <p>The iconic "watch of the masses." Its clean, minimalist dial and reliable mechanical movement make it a timeless piece of Indian horology.</p>
-          <button class="btn">Shop Now</button>
+          <a href="{% url 'catalog' %}" class="btn" style="text-decoration: none; display: inline-block;">Shop Now</a>
         </div>
       </div>
 
-      <div class="slide" style="background-image: url('../static/images/img3.png');">
+      <div class="slide" style="background-image: url('{% static 'images/img3.png' %}');">
         <div class="slide-content">
           <h1>HMT Rajat</h1>
           <p>India’s very first automatic watch. With its bold cushion case and day-date complication, the Rajat is a symbol of vintage prestige.</p>
-          <button class="btn">Shop Now</button>
+          <a href="{% url 'catalog' %}" class="btn" style="text-decoration: none; display: inline-block;">Shop Now</a>
         </div>
       </div>
 
-      <div class="slide" style="background-image: url('../static/images/img4.png');">
+      <div class="slide" style="background-image: url('{% static 'images/img4.png' %}');">
         <div class="slide-content">
           <h1>The HMT Legacy</h1>
           <p>"Desh Ki Dhadkan" — the pulse of the nation. Experience the unmatched charm and craftsmanship of classic Indian watchmaking.</p>
-          <button class="btn">Shop Now</button>
+          <a href="{% url 'catalog' %}" class="btn" style="text-decoration: none; display: inline-block;">Shop Now</a>
         </div>
       </div>
 
@@ -82,64 +84,33 @@
     <h2 class="section-title">Best Sellers</h2>
     <div class="product-grid">
       
+      {% for watch in bestsellers %}
       <div class="product-card reveal-card">
         <div class="product-image-wrapper">
           <div class="badge">Bestseller</div>
-          <img src="./static/images/bestseller1.png" alt="HMT Himalaya" class="img-main">
-          <img src="./static/images/bestseller12.png" alt="HMT Himalaya Back" class="img-hover">
+          <img src="{{ watch.image.url }}" alt="{{ watch.name }}" class="img-main">
         </div>
         <div class="product-info">
-          <h3>HMT Himalaya</h3>
-          <div class="price">₹2,800</div>
-          <button class="btn-add" onclick="addToCart()">Add to cart</button>
+          <h3>{{ watch.name }}</h3>
+          <div class="price">₹{{ watch.price }}</div>
+          
+          <form action="{% url 'add_to_cart' watch.id %}" method="POST" style="width: 100%;">
+              {% csrf_token %}
+              <button type="submit" class="btn-add">Add to cart</button>
+          </form>
         </div>
       </div>
-
-      <div class="product-card reveal-card">
-        <div class="product-image-wrapper">
-          <div class="badge">Bestseller</div>
-          <img src="./static/images/bestseller21.png" alt="HMT Pilot" class="img-main">
-          <img src="./static/images/bestseller2.png" alt="HMT Pilot Back" class="img-hover">
-        </div>
-        <div class="product-info">
-          <h3>HMT Pilot</h3>
-          <div class="price"><span>₹3,500</span> ₹2,800</div>
-          <button class="btn-add" onclick="addToCart()">Add to cart</button>
-        </div>
-      </div>
-
-      <div class="product-card reveal-card">
-        <div class="product-image-wrapper">
-          <div class="badge">Bestseller</div>
-          <img src="./static/images/bestseller3.png" alt="HMT Janata" class="img-main">
-          <img src="./static/images/bestseller31.png" alt="HMT Janata Back" class="img-hover">
-        </div>
-        <div class="product-info">
-          <h3>HMT Pilot</h3>
-          <div class="price">₹2,100</div>
-          <button class="btn-add" onclick="addToCart()">Add to cart</button>
-        </div>
-      </div>
-
-      <div class="product-card reveal-card">
-        <div class="product-image-wrapper">
-          <div class="badge">Bestseller</div>
-          <img src="./static/images/bestseller42.png" alt="HMT Sona" class="img-main">
-          <img src="./static/images/bestseller4.png" alt="HMT Sona Back" class="img-hover">
-        </div>
-        <div class="product-info">
-          <h3>HMT Mechanical</h3>
-          <div class="price">₹3,200</div>
-          <button class="btn-add" onclick="addToCart()">Add to cart</button>
-        </div>
-      </div>
+      {% empty %}
+      <p style="grid-column: 1/-1; text-align: center; color: #777;">No bestsellers added yet. Log into the admin panel to add watches!</p>
+      {% endfor %}
 
     </div>
   </section>
+
   <section class="split-features-section" id="about">
     <div class="feature-row reveal">
       <div class="feature-image">
-        <img src="./static/images/aboutus.png" alt="Divine Watch House Story">
+        <img src="{% static 'images/aboutus.png' %}" alt="Divine Watch House Story">
       </div>
       <div class="feature-text">
         <span class="subheading">Where It All Began</span>
@@ -152,6 +123,7 @@
       </div>
     </div>
   </section>
+
   <div id="cart-sidebar" class="cart-sidebar">
     <div class="cart-header">
       <h3>Your Cart</h3>
@@ -169,13 +141,14 @@
     </div>
   </div>
   <div id="cart-overlay" class="cart-overlay" onclick="toggleCart()"></div>
- <footer class="site-footer">
+
+  <footer class="site-footer">
     <div class="footer-top">
       
       <div class="footer-col">
         <h4>Quick links</h4>
         <ul>
-          <li><a href="./templates/catalog.html">Shop now</a></li>
+          <li><a href="{% url 'catalog' %}">Shop now</a></li>
           <li><a href="#about">About us</a></li>
           <li><a href="/admin">Admin Login</a></li>
         </ul>
@@ -213,6 +186,6 @@
     </div>
   </footer>
 
-  <script src="./static/js/script.js"></script>
+  <script src="{% static 'js/script.js' %}"></script>
 </body>
 </html>

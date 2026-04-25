@@ -447,10 +447,12 @@ header.scrolled .cart-wrapper {
 }
 
 /* --- Clean 3-Column Footer Styles --- */
+/* --- Ultra-Compact 3-Column Footer Styles --- */
 .site-footer {
   background-color: var(--primary-color);
   color: #ffffff;
-  padding: 60px 5% 30px;
+  /* Very tight padding: 20px top, 10px bottom */
+  padding: 20px 5% 10px; 
   font-family: var(--font-main), sans-serif;
   text-align: left; 
 }
@@ -458,14 +460,14 @@ header.scrolled .cart-wrapper {
 .footer-top {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-  margin-bottom: 50px;
+  gap: 20px; /* Tighter gap between columns */
+  margin-bottom: 15px; /* Tiny space before the copyright line */
 }
 
 .footer-col h4 {
-  font-size: 1.1rem;
+  font-size: 1rem; /* Slightly smaller heading */
   font-weight: 500;
-  margin-bottom: 20px;
+  margin-bottom: 8px; /* Pulled the links much closer to the heading */
   color: #fff;
 }
 
@@ -476,13 +478,13 @@ header.scrolled .cart-wrapper {
 }
 
 .footer-col ul li {
-  margin-bottom: 12px;
+  margin-bottom: 4px; /* Links are now stacked very tightly */
 }
 
 .footer-col ul li a {
   color: #ccc;
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.85rem; /* Smaller, tighter font for the links */
   transition: all 0.3s ease;
 }
 
@@ -490,31 +492,18 @@ header.scrolled .cart-wrapper {
   color: var(--accent-color);
 }
 
-.social-list-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.social-list-item i {
-  font-size: 1.4rem;
-  color: #ffffff;
-  transition: color 0.3s ease;
-}
-
-.footer-col ul li a.social-list-item:hover i {
-  color: var(--accent-color);
-}
-
 .footer-bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.2);
-  padding-top: 30px;
+  padding-top: 10px; /* Very tight space above copyright */
 }
 
 .footer-bottom-left p {
-  font-size: 0.85rem;
+  font-size: 0.8rem; /* Smaller copyright text */
   color: #ccc;
+  margin: 0;
 }
+
+
 
 /* --- Page Load & Slide Animations --- */
 @keyframes fadeInUp {

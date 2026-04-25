@@ -29,7 +29,7 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
+# Cleaned up: only one INSTALLED_APPS list
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'store', # Your app is correctly registered here
 ]
 
 MIDDLEWARE = [
@@ -54,10 +55,12 @@ ROOT_URLCONF = 'dwh_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # Correctly pointing to your templates folder
+        'DIRS': [BASE_DIR / 'templates'], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -115,3 +118,27 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# Media files (User-uploaded watch images from the admin panel)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# --- CYBERSECURITY MANDATES ---
+
+# 1. Enforce Argon2 Password Hashing
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]
+
+# 2. Secure Session Management
+# Note: SECURE cookies are commented out for local HTTP testing. 
+# Uncomment these when deploying to a live HTTPS server!
+# SESSION_COOKIE_SECURE = True          
+# CSRF_COOKIE_SECURE = True             
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True # Mitigate session hijacking
+SESSION_COOKIE_HTTPONLY = True        # Prevent client-side JS from accessing the session cookie
