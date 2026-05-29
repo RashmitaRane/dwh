@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout | Divine Watch House</title>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/checkout.css' %}">
+</head>
+<body class="catalog-page checkout-page">
+
+  <div class="announcement-bar">
+    <span class="marquee-text">Secure Checkout - Choose Your Payment Plan</span>
+  </div>
+
+  <header class="scrolled">
+    <a href="{% url 'index' %}" class="logo">
+      <img src="{% static 'images/logo.png' %}" alt="Watch DWH Logo">
+    </a>
+    <div class="header-icons">
+      <a href="{% url 'catalog' %}" title="Back to shop"><i class="ph ph-arrow-left"></i></a>
+    </div>
+  </header>
+
+  <main class="checkout-main catalog-main-section">
+    <div class="checkout-steps">
+      <span class="step active" data-step="1">1. Address</span>
+      <span class="step" data-step="2">2. Payment</span>
+      <span class="step" data-step="3">3. Done</span>
+    </div>
+
+    <div id="checkout-alert" class="checkout-alert" hidden></div>
+
+    <!-- Step 1: Address -->
+    <section id="step-address" class="checkout-panel active">
+      <h1>Delivery address</h1>
+      <p class="checkout-sub">Review or edit your address before payment.</p>
+      <form id="checkout-address-form" class="checkout-form">
+        <div class="input-row">
+          <div class="input-group"><input type="text" name="first_name" placeholder="First Name" required></div>
+          <div class="input-group"><input type="text" name="last_name" placeholder="Last Name"></div>
+        </div>
+        <div class="input-row">
+          <div class="input-group"><input type="email" name="email" placeholder="Email" readonly></div>
+          <div class="input-group"><input type="text" name="phone" placeholder="Mobile Number" required></div>
+        </div>
+        <div class="input-group"><input type="text" name="flat_no" placeholder="Flat / House No." required></div>
+        <div class="input-group"><input type="text" name="area" placeholder="Area / Street" required></div>
+        <div class="input-row">
+          <div class="input-group"><input type="text" name="city" placeholder="City" required></div>
+          <div class="input-group"><input type="text" name="pincode" placeholder="Pincode" required></div>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <select name="state" id="checkout-state" required>
+              <option value="">Select state</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <select name="district" id="checkout-district" required>
+              <option value="">Select district</option>
+            </select>
+          </div>
+        </div>
+        <div class="input-group"><input type="text" name="landmark" placeholder="Landmark (optional)"></div>
+        <div class="checkout-order-summary" id="checkout-cart-summary"></div>
+        <button type="submit" class="auth-submit-btn">Continue to payment</button>
+      </form>
+    </section>
+
+    <!-- Step 2: Payment -->
+    <section id="step-payment" class="checkout-panel">
+      <h1>Payment</h1>
+      <p class="checkout-sub">Choose your plan, pay via QR, then upload the receipt.</p>
+
+      <div class="payment-box">
+        <label style="display:block; margin-bottom:10px; font-weight:600;">Payment Plan:</label>
+        <select id="payment-type-select" onchange="updatePaymentAmount()" style="width:100%; padding:10px; margin-bottom:20px; border-radius:8px;">
+            <option value="full">Full Payment (100%)</option>
+            <option value="half">Half Advance (50%)</option>
+        </select>
+        
+        <p class="payment-amount-label">Amount to pay now</p>
+        <p class="payment-amount" id="payment-amount-display">₹ 0</p>
+        <div class="qr-wrap">
+          <img id="payment-qr" src="" alt="Payment QR code" width="220" height="220">
+        </div>
+        <p class="payment-upi-hint">UPI payment — upload bank/UPI receipt as PDF after paying</p>
+      </div>
+
+      <form id="checkout-payment-form" class="checkout-form">
+        <div class="input-group">
+          <label class="file-label" for="payment-pdf">Upload payment proof (PDF only, max 5MB)</label>
+          <input type="file" id="payment-pdf" name="payment_proof" accept="application/pdf,.pdf" required>
+        </div>
+        <button type="submit" class="auth-submit-btn">Submit payment</button>
+        <button type="button" class="checkout-back-btn" id="back-to-address">← Edit address</button>
+      </form>
+    </section>
+
+    <!-- Step 3: Success -->
+    <section id="step-success" class="checkout-panel">
+      <div class="success-box">
+        <i class="ph ph-check-circle" style="font-size:3rem; color:var(--success);"></i>
+        <h1>Payment received</h1>
+        <p id="success-message">Waiting for owner confirmation.</p>
+        <p class="order-num" id="success-order-number"></p>
+        <div class="status-badge awaiting">Awaiting owner confirmation</div>
+        <p class="checkout-sub">We emailed you a confirmation. You will get another email when the owner confirms or rejects your order.</p>
+        <a href="{% url 'catalog' %}" class="auth-submit-btn" style="display:inline-block;text-align:center;text-decoration:none;margin-top:20px;">Back to shop</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="{% static 'js/script.js' %}"></script>
+  <script src="{% static 'js/checkout.js' %}"></script>
+</body>
+</html>

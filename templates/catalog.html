@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catalog | Divine Watch House</title>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="catalog-page">
+
+  <div class="announcement-bar">
+    <span class="marquee-text">Free shipping in India on all HMT watches!</span>
+  </div>
+
+  <header class="scrolled">
+    <a href="{% url 'index' %}" class="logo">
+      <img src="{% static 'images/logo.png' %}" alt="Watch DWH Logo">
+    </a>
+    <nav>
+      <a href="{% url 'catalog' %}">Shop</a>
+      <a href="{% url 'index' %}#about">About Us</a>
+      <a href="https://api.whatsapp.com/message/RVICHKUP5ZAOH1?autoload=1&app_absent=0&utm_source=ig" target="_blank">Contact</a>
+    </nav>
+    <div class="header-icons">
+      <a href="{% url 'catalog' %}" title="Search"><i class="ph ph-magnifying-glass"></i></a>
+      <div class="account-wrapper" id="account-icon-trigger" title="Account">
+        <i class="ph ph-user"></i>
+        <div id="account-dropdown" class="profile-dropdown"></div>
+      </div>
+      <div class="cart-wrapper" onclick="toggleCart()" title="Cart">
+        <i class="ph ph-shopping-cart"></i>
+        <span class="cart-badge" id="cart-badge">0</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="section catalog-main-section">
+    <div class="catalog-product-grid product-grid" id="catalog-grid"></div>
+  </section>
+
+  <div id="cart-sidebar" class="cart-sidebar">
+    <div class="cart-header">
+      <h3>Your Cart</h3>
+      <button class="close-cart" onclick="toggleCart()">✕</button>
+    </div>
+    <div id="cart-items-container" class="cart-content">
+      <p class="empty-msg">Your cart is currently empty.</p>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total:</span>
+        <span id="cart-total-price">₹0</span>
+      </div>
+      <button class="btn-checkout" style="display:block; width:100%; text-align:center; padding:15px; background:#111; color:#fff; border:none; cursor:pointer; font-weight:bold;">Checkout Now</button>
+    </div>
+  </div>
+  <div id="cart-overlay" class="cart-overlay" onclick="toggleCart()"></div>
+
+  <div id="login-modal" class="modal-overlay" aria-hidden="true">
+    <div id="auth-modal-content" class="auth-modal-box">
+      <button class="modal-close" id="login-modal-close">&times;</button>
+      <div id="form-slider-wrapper" class="form-slider">
+        <div id="login-pane" class="auth-pane">
+          <div class="modal-header">
+            <h2>WELCOME BACK</h2>
+          </div>
+          <form method="POST" action="#">
+            <div class="input-group">
+              <input type="email" name="username" placeholder="Email Address" required>
+            </div>
+            <div class="input-group">
+              <input type="password" name="password" placeholder="Password" required>
+            </div>
+            <button type="submit" class="auth-submit-btn">LOGIN</button>
+          </form>
+          <p class="auth-toggle-text">Don't have an account? <button type="button" id="go-to-register">Sign up</button></p>
+        </div>
+        <div id="register-pane" class="auth-pane">
+          <div class="modal-header">
+            <h2>CREATE ACCOUNT</h2>
+          </div>
+          <form id="register-form" method="POST" action="#">
+            <div class="input-group">
+              <input id="register-username" type="text" name="username" placeholder="Full Name" required>
+            </div>
+            <div class="input-group">
+              <input id="register-email" type="email" name="email" placeholder="Email Address" required>
+            </div>
+            <div class="input-group">
+              <input id="register-password" type="password" name="password" placeholder="Password (1 uppercase, 1 number)" required minlength="8">
+            </div>
+            <div class="input-group">
+              <input id="register-confirm-password" type="password" name="confirm_password" placeholder="Confirm Password" required minlength="8">
+            </div>
+            <p id="register-status" class="status-msg" style="font-weight: 500;"></p>
+            <button type="submit" class="auth-submit-btn">REGISTER</button>
+          </form>
+          <p class="auth-toggle-text">Already have an account? <button type="button" id="go-to-login">Login</button></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-login-modal" class="modal-overlay" aria-hidden="true">
+    <div class="auth-modal-box admin-box">
+      <button class="modal-close" id="admin-modal-close">&times;</button>
+      <div class="modal-header">
+        <h2>ADMIN LOGIN</h2>
+      </div>
+      <form id="admin-login-form" method="POST" action="#">
+        <div class="input-group">
+          <input type="email" name="admin_email" placeholder="Admin Email" required>
+        </div>
+        <div class="input-group">
+          <input type="password" name="admin_password" placeholder="Admin Password" required>
+        </div>
+        <p id="admin-login-status" style="color: #c0392b; font-size: 0.85rem; margin-bottom: 10px; text-align: center; min-height: 16px; width: 100%;"></p>
+        <button type="submit" class="auth-submit-btn admin-btn" style="background: #0f422e;">SECURE LOGIN</button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top">
+      <div class="footer-col">
+        <h4>Quick links</h4>
+        <ul>
+          <li><a href="{% url 'catalog' %}">Shop now</a></li>
+          <li><a href="{% url 'index' %}#about">About us</a></li>
+          <li><a href="#" class="admin-login-link">Admin Login</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <ul>
+          <li><a href="https://api.whatsapp.com/message/RVICHKUP5ZAOH1?autoload=1&app_absent=0&utm_source=ig" target="_blank">Contact us</a></li>
+          <li><a href="#faqs">FAQs</a></li>
+        
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Follow us</h4>
+        <ul>
+          <li>
+            <a href="https://www.instagram.com/divine_watch_house/" target="_blank" class="social-list-item">
+              <i class="ph ph-instagram-logo"></i> Instagram
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-bottom-left">
+        <p>&copy; 2026, Divine Watch House</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

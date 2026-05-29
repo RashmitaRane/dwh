@@ -1,0 +1,19 @@
+---
+description: Security rules for Django DWH project (Taha Jaffri checklist, stack-adapted)
+alwaysApply: true
+---
+
+# Security — Divine Watch House (Django)
+
+Follow `AGENTS.md` in the project root. Non-negotiables:
+
+1. **Secrets**: Only in `.env` / server env — never in JS, HTML, or git.
+2. **ORM only**: No SQL string concatenation; use Django models/querysets.
+3. **Auth POSTs**: `@csrf_protect` + `django-ratelimit` on login/register/admin-login.
+4. **Validation**: Server-side for all API inputs; generic client error messages.
+5. **Passwords**: `User.objects.create_user()` / `check_password` — never store plain text.
+6. **XSS**: Escape dynamic HTML in JS; no `|safe` on user data in templates.
+7. **Uploads**: Validate type/size; no arbitrary paths; use `MEDIA_ROOT`.
+8. **Production**: `DEBUG=False`, secure cookies, HTTPS, explicit `ALLOWED_HOSTS`, no wildcard CORS.
+
+When adding features, update settings via environment variables, not hardcoded credentials.

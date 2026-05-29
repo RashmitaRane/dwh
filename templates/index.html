@@ -1,0 +1,797 @@
+// --- GLOBAL AUTH STATUS ---
+window.userAuthStatus = { is_authenticated: false, is_admin: false, is_staff: false };
+
+const INDIA_STATES = [
+  'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Andaman and Nicobar Islands','Chandigarh','Dadra and Nagar Haveli and Daman and Diu','Delhi','Jammu and Kashmir','Ladakh','Lakshadweep','Puducherry'
+];
+
+const STATE_DISTRICTS = {
+  'Karnataka': ['Bengaluru Urban', 'Bengaluru Rural', 'Mysuru', 'Mangaluru', 'Hubballi-Dharwad', 'Ballari'],
+  'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Thane', 'Nashik'],
+  'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem'],
+  'West Bengal': ['Kolkata', 'Howrah', 'Darjeeling', 'Hooghly', 'Siliguri'],
+  'Delhi': ['New Delhi', 'North Delhi', 'South Delhi', 'East Delhi', 'West Delhi'],
+  'Telangana': ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam'],
+  'Andhra Pradesh': ['Vijayawada', 'Visakhapatnam', 'Guntur', 'Tirupati', 'Nellore'],
+  'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar'],
+  'Punjab': ['Amritsar', 'Ludhiana', 'Jalandhar', 'Patiala', 'Bathinda'],
+  'Uttar Pradesh': ['Lucknow', 'Kanpur', 'Varanasi', 'Agra', 'Meerut']
+};
+
+// --- CUSTOM IN-APP NOTIFICATIONS (TOASTS) ---
+window.showToast = function(message, type = 'success') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = `dwh-toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  // Automatically remove after 3.5 seconds
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    toast.addEventListener('transitionend', () => toast.remove());
+  }, 3500);
+};
+
+function getDistrictOptions(state, selectedDistrict = '') {
+  const districts = STATE_DISTRICTS[state] || [];
+  if (districts.length === 0) {
+    return `<option value="">Select state first</option>`;
+  }
+  return `
+    <option value="">Select district</option>
+    ${districts.map(d => `<option value="${d}" ${d === selectedDistrict ? 'selected' : ''}>${d}</option>`).join('')}
+  `;
+}
+
+function saveCartToSession() {
+  sessionStorage.setItem('dwh_cart', JSON.stringify(cart));
+}
+
+function loadCartFromSession() {
+  try {
+    const stored = JSON.parse(sessionStorage.getItem('dwh_cart') || '[]');
+    if (Array.isArray(stored) && stored.length) cart = stored;
+  } catch { /* ignore */ }
+}
+
+function getStoredProfile() {
+  const stored = localStorage.getItem('dwh_user_profile');
+  if (!stored) return {
+    first_name: '', last_name: '', email: '', phone: '', flat_no: '', area: '', city: '', state: '', district: '', pincode: '', landmark: '', country: 'India'
+  };
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return { first_name: '', last_name: '', email: '', phone: '', flat_no: '', area: '', city: '', state: '', district: '', pincode: '', landmark: '', country: 'India' };
+  }
+}
+
+function saveStoredProfile(profile) {
+  localStorage.setItem('dwh_user_profile', JSON.stringify(profile));
+}
+
+function getWishlistItems() {
+  const stored = localStorage.getItem('dwh_wishlist_items');
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return [];
+  }
+}
+
+function saveWishlistItems(items) {
+  localStorage.setItem('dwh_wishlist_items', JSON.stringify(items));
+}
+
+function isStrongPassword(password) {
+  return password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password);
+}
+
+async function fetchAuthStatus() {
+  try {
+    const res = await fetch('/api/check-auth/', { credentials: 'same-origin' });
+    if (res.ok) {
+      window.userAuthStatus = await res.json();
+      updateHeaderUI();
+    }
+  } catch (e) { console.error("Auth check failed", e); }
+}
+
+function initCatalogHeader() {
+  if (!document.body.classList.contains('catalog-page')) return;
+  const header = document.querySelector('header');
+  if (header) header.classList.add('scrolled');
+}
+
+// --- Scroll Reveal Animation ---
+function initScrollReveal() {
+  const revealElements = document.querySelectorAll('.reveal, .reveal-card');
+  const revealOptions = { threshold: 0.15, rootMargin: "0px 0px -50px 0px" };
+
+  const revealOnScroll = new IntersectionObserver(function(entries, observer) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+        observer.unobserve(entry.target); 
+      }
+    });
+  }, revealOptions);
+
+  revealElements.forEach(el => revealOnScroll.observe(el));
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function initCatalogImageHover(card) {
+  const wrapper = card.querySelector('.product-image-wrapper');
+  const imgEl = card.querySelector('.catalog-product-img');
+  if (!wrapper || !imgEl) return;
+
+  let images = [];
+  try {
+    images = JSON.parse(wrapper.dataset.images || '[]');
+  } catch {
+    images = [];
+  }
+  if (images.length <= 1) return;
+
+  let hoverInterval = null;
+  let currentIndex = 0;
+
+  card.addEventListener('mouseenter', () => {
+    currentIndex = 1;
+    imgEl.src = images[currentIndex];
+    hoverInterval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % images.length;
+      imgEl.src = images[currentIndex];
+    }, 700);
+  });
+
+  card.addEventListener('mouseleave', () => {
+    if (hoverInterval) clearInterval(hoverInterval);
+    hoverInterval = null;
+    currentIndex = 0;
+    imgEl.src = images[0];
+  });
+}
+
+// --- DYNAMIC CATALOG LOADER (For catalog.html) ---
+async function loadCatalog() {
+    const grid = document.getElementById('catalog-grid');
+    if(!grid) return;
+    try {
+        const res = await fetch('/api/products/');
+        const data = await res.json();
+        grid.innerHTML = '';
+        if(data.products.length === 0) {
+            grid.innerHTML = '<p class="catalog-empty-msg">No watches available yet. Admin can add watches from Django admin.</p>';
+            return;
+        }
+        
+        // Grab current wishlist from local storage
+        const currentWishlist = getWishlistItems();
+
+        data.products.forEach(p => {
+            const images = (p.images && p.images.length) ? p.images : (p.image_url ? [p.image_url] : []);
+            const mainImage = images[0] || '';
+            
+            // USE RAW NAME FOR BULLETPROOF DATABASE MATCHING
+            const rawName = p.name;
+            const isWishlisted = currentWishlist.some(i => i.name === rawName);
+            
+            // Safe strings to pass into the Javascript click function
+            const jsName = rawName.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const jsImage = mainImage.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            
+            // Safe strings just for displaying the HTML text
+            const displayName = escapeHtml(rawName);
+            const displayBrand = escapeHtml(p.brand || 'HMT');
+            const safeImgAttr = escapeHtml(mainImage);
+            
+            const priceStr = parseFloat(p.price).toLocaleString('en-IN');
+            
+            const heartIconClass = isWishlisted ? 'ph-fill ph-heart' : 'ph ph-heart';
+            const heartColor = isWishlisted ? 'color: #c0392b;' : 'color: inherit;';
+
+            const card = document.createElement('article');
+            card.className = 'catalog-product-card product-card reveal-card';
+            card.innerHTML = `
+                <div class="product-image-wrapper">
+                    <button type="button" class="catalog-wishlist-btn" aria-label="Add to wishlist" onclick="event.stopPropagation(); toggleWishlistItem(this, '${jsName}', ${p.price}, '${jsImage}')">
+                        <i class="${heartIconClass}" style="${heartColor} transition: all 0.2s;"></i>
+                    </button>
+                    <img src="${safeImgAttr}" alt="${displayName}" class="catalog-product-img img-main">
+                </div>
+                <div class="product-info catalog-product-info">
+                    <span class="catalog-brand">${displayBrand}</span>
+                    <h3 class="catalog-model">${displayName}</h3>
+                    <p class="catalog-mrp-label">MRP</p>
+                    <p class="catalog-price">₹ ${priceStr} <span class="catalog-tax-note">(incl. of all taxes)</span></p>
+                    <button type="button" class="catalog-add-btn" onclick="addToCart('${jsName}', ${p.price}, '${jsImage}')">Add to cart</button>
+                </div>
+            `;
+            const wrapper = card.querySelector('.product-image-wrapper');
+            if (wrapper) wrapper.dataset.images = JSON.stringify(images);
+            grid.appendChild(card);
+            initCatalogImageHover(card);
+        });
+        initScrollReveal();
+    } catch(e) { console.error("Error loading catalog", e); }
+}
+
+// --- DYNAMIC WISHLIST TOGGLE ---
+window.toggleWishlistItem = function(btnElement, name, price, image) {
+  const items = getWishlistItems();
+  const existsIndex = items.findIndex(i => i.name === name);
+  const icon = btnElement.querySelector('i'); 
+
+  if (existsIndex >= 0) {
+    items.splice(existsIndex, 1);
+    if (icon) {
+      icon.className = 'ph ph-heart'; 
+      icon.style.color = 'inherit';
+    }
+    showToast('Removed from wishlist.', 'success'); // Uses custom toast instead of alert
+  } else {
+    items.push({ name, price, image });
+    if (icon) {
+      icon.className = 'ph-fill ph-heart'; 
+      icon.style.color = '#c0392b';        
+    }
+    showToast('Added to wishlist.', 'success'); // Uses custom toast instead of alert
+  }
+  saveWishlistItems(items);
+};
+
+// --- DYNAMIC BEST SELLERS LOADER (For index.html) ---
+async function loadBestSellers() {
+    const grid = document.getElementById('index-bestsellers-grid');
+    if(!grid) return;
+    try {
+        const res = await fetch('/api/products/');
+        const data = await res.json();
+        grid.innerHTML = '';
+        
+        const bestSellers = data.products.slice(0, 3);
+        
+        bestSellers.forEach(p => {
+            const mainImage = p.image_url || p.image || '';
+            const rawName = p.name;
+            const jsName = rawName.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const jsImage = mainImage.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            
+            grid.innerHTML += `
+                <div class="product-card reveal-card">
+                    <div class="product-image-wrapper">
+                        <div class="badge">Bestseller</div>
+                        <img src="${escapeHtml(mainImage)}" alt="${escapeHtml(rawName)}" class="img-main">
+                    </div>
+                    <div class="product-info">
+                        <h3>${escapeHtml(rawName)}</h3>
+                        <div class="price">₹${parseFloat(p.price).toLocaleString('en-IN')}</div>
+                        <button type="button" class="btn-add" onclick="indexAddToCart()">Add to cart</button>
+                    </div>
+                </div>
+            `;
+        });
+        initScrollReveal();
+    } catch (e) { console.error("Error loading best sellers", e); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadCartFromSession();
+    initCatalogHeader();
+    fetchAuthStatus();
+    loadCatalog();
+    loadBestSellers();
+    initScrollReveal();
+    initStickyHeader();
+});
+
+function initStickyHeader() {
+  const header = document.querySelector('header');
+  if (!header || document.body.classList.contains('catalog-page')) return;
+
+  function checkScroll() {
+    if (window.scrollY > 40) header.classList.add('scrolled');
+    else header.classList.remove('scrolled');
+  }
+  window.addEventListener('scroll', checkScroll);
+  checkScroll();
+}
+
+// --- SMART CART LOGIC ---
+let cart = [];
+
+window.toggleCart = function() {
+  const sidebar = document.getElementById('cart-sidebar');
+  const overlay = document.getElementById('cart-overlay');
+  if (sidebar) sidebar.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('show');
+}
+
+window.addToCart = function(name, price, imgSrc) {
+  if (!window.userAuthStatus.is_authenticated) {
+      const loginModal = document.getElementById('login-modal');
+      if(loginModal) {
+          loginModal.classList.add('active');
+          loginModal.setAttribute('aria-hidden', 'false');
+      }
+      return;
+  }
+  
+  cart.push({ name, price, img: imgSrc });
+  saveCartToSession();
+  renderCart();
+  toggleCart();
+  showToast('Item added to your cart!', 'success');
+};
+
+window.indexAddToCart = function() {
+    if (!window.userAuthStatus.is_authenticated) {
+        const loginModal = document.getElementById('login-modal');
+        if(loginModal) {
+            loginModal.classList.add('active');
+            loginModal.setAttribute('aria-hidden', 'false');
+        }
+    } else {
+        window.location.href = '/catalog.html';
+    }
+};
+
+function renderCart() {
+  const container = document.getElementById('cart-items-container');
+  const totalPriceElement = document.getElementById('cart-total-price');
+  const badge = document.getElementById('cart-badge');
+  
+  if (badge) badge.innerText = cart.length;
+  
+  if (!container) return;
+  container.innerHTML = '';
+  let total = 0;
+
+  if (cart.length === 0) {
+    container.innerHTML = '<p class="empty-msg">Your cart is currently empty.</p>';
+  } else {
+    cart.forEach((item, index) => {
+      total += item.price;
+      const itemElement = document.createElement('div');
+      itemElement.className = 'cart-item';
+      itemElement.innerHTML = `
+        <img src="${item.img}" alt="${escapeHtml(item.name)}">
+        <div class="cart-item-info">
+          <h3>${escapeHtml(item.name)}</h3>
+          <p class="price">₹${item.price.toLocaleString('en-IN')}</p>
+          <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#c0392b; cursor:pointer; font-size:0.8rem; padding:0; text-decoration:underline;">Remove</button>
+        </div>
+      `;
+      container.appendChild(itemElement);
+    });
+  }
+  if (totalPriceElement) totalPriceElement.innerText = `₹${total.toLocaleString('en-IN')}`;
+}
+
+window.removeFromCart = function(index) {
+  cart.splice(index, 1);
+  saveCartToSession();
+  renderCart();
+  showToast('Item removed from cart.', 'success');
+};
+
+// --- HEADER & DROPDOWN UI LOGIC ---
+function updateHeaderUI() {
+    const authStatus = window.userAuthStatus;
+    const accountTrigger = document.getElementById('account-icon-trigger');
+    
+    if (!accountTrigger) return;
+
+    let dropdown = document.getElementById('account-dropdown');
+    if (!dropdown) {
+      dropdown = document.createElement('div');
+      dropdown.id = 'account-dropdown';
+      dropdown.className = 'profile-dropdown';
+      accountTrigger.appendChild(dropdown);
+    }
+
+    if (authStatus.is_admin || authStatus.is_staff) {
+        dropdown.innerHTML = `
+          <div style="padding: 10px 20px; border-bottom: 1px solid #eee; background: #f9f9f9;"><strong>Admin Panel</strong></div>
+          <a href="/staff/orders/" style="display:block; padding:12px 20px; color:#333; text-decoration:none;">Orders & payments</a>
+          <a href="/admin/" style="display:block; padding:12px 20px; color:#333; text-decoration:none;">Django Admin</a>
+          <a href="/logout/" style="display:block; padding:12px 20px; color:#c0392b; text-decoration:none;">Logout</a>
+        `;
+    } else if (authStatus.is_authenticated) {
+        dropdown.innerHTML = `
+          <div style="padding: 10px 20px; border-bottom: 1px solid #eee; background: #f9f9f9;"><strong>My Account</strong></div>
+          <a href="#" id="my-wishlist-link" style="display:block; padding:12px 20px; color:#333; text-decoration:none; transition: background 0.2s;">Wishlist</a>
+          <a href="#" id="my-profile-link" style="display:block; padding:12px 20px; color:#333; text-decoration:none; transition: background 0.2s;">Edit Profile</a>
+          <a href="#" id="my-orders-link" style="display:block; padding:12px 20px; color:#333; text-decoration:none; transition: background 0.2s;">My Orders</a>
+          <a href="/logout/" style="display:block; padding:12px 20px; color:#c0392b; text-decoration:none;">Logout</a>
+        `;
+        
+        document.getElementById('my-wishlist-link')?.addEventListener('click', openWishlistModal);
+        document.getElementById('my-profile-link')?.addEventListener('click', openUserProfileModal);
+        document.getElementById('my-orders-link')?.addEventListener('click', openUserOrdersModal);
+    }
+
+    if (!accountTrigger.dataset.listenerAttached) {
+        accountTrigger.addEventListener('click', (e) => {
+            if (e.target.closest('a')) return; 
+            e.preventDefault();
+            if (window.userAuthStatus.is_authenticated) {
+                dropdown.classList.toggle('show');
+            } else {
+                document.getElementById('login-modal').classList.add('active');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (dropdown && !accountTrigger.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+        accountTrigger.dataset.listenerAttached = 'true';
+    }
+}
+
+// --- MODALS AND FORMS ---
+document.addEventListener('DOMContentLoaded', () => {
+  const loginModal = document.getElementById('login-modal');
+  const loginForm = document.querySelector('#login-pane form');
+  const registerForm = document.getElementById('register-form');
+  const registerStatus = document.getElementById('register-status');
+  
+  function getCsrfToken() {
+    const cookieValue = `; ${document.cookie}`;
+    const parts = cookieValue.split('; csrftoken=');
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+  }
+
+  async function postJson(url, payload) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+      credentials: 'same-origin',
+      body: JSON.stringify(payload)
+    });
+    let data = {};
+    try { data = await response.json(); } catch (err) { }
+    if (!response.ok) throw new Error(data.message || 'Request failed.');
+    return data;
+  }
+
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        username: registerForm.username.value.trim(),
+        email: registerForm.email.value.trim(),
+        password: registerForm.password.value,
+        confirm_password: registerForm.confirm_password.value
+      };
+
+      if (payload.password !== payload.confirm_password) {
+        registerStatus.textContent = 'Passwords do not match.';
+        registerStatus.style.color = '#c0392b';
+        return;
+      }
+
+      if (!isStrongPassword(payload.password)) {
+        registerStatus.textContent = 'Password needs 8+ chars, 1 uppercase letter, and 1 number.';
+        registerStatus.style.color = '#c0392b';
+        return;
+      }
+
+      registerStatus.textContent = 'Registering...';
+      registerStatus.style.color = '#333';
+      
+      try {
+        await postJson('/api/register/', payload);
+        registerStatus.textContent = 'Registration successful! Redirecting to login...';
+        registerStatus.style.color = '#0f422e'; 
+        registerForm.reset();
+        showToast('Account Created successfully!', 'success');
+        setTimeout(() => {
+            document.getElementById('go-to-login').click();
+            registerStatus.textContent = '';
+        }, 1500);
+      } catch (error) {
+        registerStatus.textContent = error.message;
+        registerStatus.style.color = '#c0392b';
+      }
+    });
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        email: loginForm.username.value.trim(),
+        password: loginForm.password.value
+      };
+      try {
+        await postJson('/api/login/', payload);
+        window.location.href = '/catalog.html';
+      } catch (error) {
+        showToast(error.message || 'Login failed.', 'error');
+      }
+    });
+  }
+
+  const adminLoginForm = document.getElementById('admin-login-form');
+  const adminLoginStatus = document.getElementById('admin-login-status');
+  if (adminLoginForm) {
+    adminLoginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if(adminLoginStatus) adminLoginStatus.textContent = "Authenticating...";
+      const payload = { admin_email: adminLoginForm.admin_email.value.trim(), admin_password: adminLoginForm.admin_password.value };
+      try {
+        await postJson('/api/admin-login/', payload);
+        window.location.href = '/admin-dashboard/';
+      } catch (error) {
+        if(adminLoginStatus) adminLoginStatus.textContent = error.message || 'Invalid admin credentials.';
+      }
+    });
+  }
+
+  const pageFormSliderWrapper = document.getElementById('form-slider-wrapper');
+  document.getElementById('go-to-register')?.addEventListener('click', () => {
+    if(pageFormSliderWrapper) pageFormSliderWrapper.style.transform = 'translateX(-50%)';
+  });
+  document.getElementById('go-to-login')?.addEventListener('click', () => {
+    if(pageFormSliderWrapper) pageFormSliderWrapper.style.transform = 'translateX(0%)';
+  });
+
+  const closeLoginBtn = document.getElementById('login-modal-close');
+  if(closeLoginBtn) closeLoginBtn.addEventListener('click', () => loginModal.classList.remove('active'));
+
+  const adminLoginLinks = document.querySelectorAll('.admin-login-link');
+  const adminModal = document.getElementById('admin-login-modal');
+  adminLoginLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+          e.preventDefault();
+          if(loginModal) loginModal.classList.remove('active');
+          if(adminModal) adminModal.classList.add('active');
+      });
+  });
+  const closeAdminBtn = document.getElementById('admin-modal-close');
+  if(closeAdminBtn) closeAdminBtn.addEventListener('click', () => adminModal.classList.remove('active'));
+
+  function closeTopModal(modal) {
+    if (modal) modal.remove();
+    document.body.style.overflow = '';
+    if (!document.querySelector('.modal-overlay.active')) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+
+  window.openUserProfileModal = function(e) {
+      if(e) e.preventDefault();
+      document.getElementById('account-dropdown')?.classList.remove('show');
+      document.querySelectorAll('.modal-overlay.active').forEach(m => m.remove());
+      const data = getStoredProfile();
+      data.email = data.email || window.userAuthStatus.email || '';
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay active';
+      modal.innerHTML = `
+        <div class="auth-modal-box admin-box profile-modal-box">
+          <button type="button" class="modal-close" aria-label="Close">&times;</button>
+          <div class="modal-header"><h2>EDIT PROFILE</h2></div>
+          <form id="user-profile-form" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="input-row">
+              <div class="input-group"><input type="text" name="first_name" placeholder="First Name" value="${data.first_name || ''}" required></div>
+              <div class="input-group"><input type="text" name="last_name" placeholder="Last Name" value="${data.last_name || ''}"></div>
+            </div>
+            <div class="input-row">
+              <div class="input-group"><input type="email" name="email" placeholder="Email" value="${data.email || ''}" readonly></div>
+              <div class="input-group"><input type="text" name="phone" placeholder="Mobile Number" value="${data.phone || ''}" required></div>
+            </div>
+            <div class="input-group"><input type="text" name="flat_no" placeholder="Flat / House No." value="${data.flat_no || ''}" required></div>
+            <div class="input-group"><input type="text" name="area" placeholder="Area / Street / Landmark" value="${data.area || ''}" required></div>
+            <div class="input-row">
+              <div class="input-group"><input type="text" name="city" placeholder="City" value="${data.city || ''}" required></div>
+              <div class="input-group"><input type="text" name="pincode" placeholder="Pincode" value="${data.pincode || ''}" required></div>
+            </div>
+            <div class="input-group">
+              <select id="profile-state" name="state" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #dcdcdc; background:#fafafa; font-family:inherit;">
+                <option value="">Select state</option>
+                ${INDIA_STATES.map(state => `<option value="${state}" ${data.state === state ? 'selected' : ''}>${state}</option>`).join('')}
+              </select>
+            </div>
+            <div class="input-group">
+              <select id="profile-district" name="district" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #dcdcdc; background:#fafafa; font-family:inherit;">
+                ${getDistrictOptions(data.state, data.district)}
+              </select>
+            </div>
+            <div class="input-group"><input type="text" name="country" placeholder="Country" value="India" readonly></div>
+            <button type="submit" class="auth-submit-btn">Save Profile</button>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      document.body.classList.add('modal-open');
+      document.body.style.overflow = 'hidden';
+      modal.querySelector('.modal-close')?.addEventListener('click', () => closeTopModal(modal));
+      modal.addEventListener('click', (ev) => {
+        if (ev.target === modal) closeTopModal(modal);
+      });
+      const stateSelect = document.getElementById('profile-state');
+      const districtSelect = document.getElementById('profile-district');
+      if (stateSelect && districtSelect) {
+          stateSelect.addEventListener('change', () => {
+              districtSelect.innerHTML = getDistrictOptions(stateSelect.value);
+          });
+      }
+      document.getElementById('user-profile-form').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const profile = {
+              first_name: event.target.first_name.value.trim(),
+              last_name: event.target.last_name.value.trim(),
+              email: event.target.email.value.trim(),
+              phone: event.target.phone.value.trim(),
+              flat_no: event.target.flat_no.value.trim(),
+              area: event.target.area.value.trim(),
+              city: event.target.city.value.trim(),
+              state: event.target.state.value,
+              district: event.target.district.value,
+              pincode: event.target.pincode.value.trim(),
+              landmark: event.target.landmark.value.trim(),
+              country: 'India'
+          };
+          saveStoredProfile(profile);
+          try {
+            await postJson('/api/profile/save/', profile);
+          } catch { }
+          showToast('Profile saved successfully.', 'success');
+          closeTopModal(modal);
+      });
+  };
+
+  window.openWishlistModal = function(e) {
+      if(e) e.preventDefault();
+      const wishlist = getWishlistItems();
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay active';
+      const wishlistHtml = wishlist.length === 0
+        ? `<p style="text-align:center; margin: 20px 0;">Your wishlist is empty. Add products from the catalog once available.</p>`
+        : wishlist.map((item, index) => `
+            <div style="display:flex; gap:12px; align-items:center; border:1px solid #eaeaea; border-radius:12px; padding:15px; margin-bottom:12px; background:#fafafa;">
+              <div style="flex:1;">
+                <strong>${escapeHtml(item.name)}</strong>
+                <p style="margin:6px 0 0 0; color:#555;">₹${parseFloat(item.price).toLocaleString('en-IN')}</p>
+              </div>
+              <button onclick="removeWishlistItem(${index})" style="border:none; background:#c0392b; color:#fff; padding:8px 14px; border-radius:8px; cursor:pointer;">Remove</button>
+            </div>
+          `).join('');
+      modal.innerHTML = `
+        <div class="auth-modal-box admin-box" style="max-width:460px; width:90%; max-height:85vh; overflow-y:auto; padding:30px;">
+          <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+          <div class="modal-header" style="margin-bottom:20px;"><h2>WISHLIST</h2></div>
+          <div>${wishlistHtml}</div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+  };
+
+  window.removeWishlistItem = function(index) {
+      const wishlist = getWishlistItems();
+      wishlist.splice(index, 1);
+      saveWishlistItems(wishlist);
+      
+      document.querySelector('.modal-overlay.active')?.remove();
+      openWishlistModal();
+      
+      loadCatalog(); 
+  };
+
+  window.openUserOrdersModal = async function(e) {
+      if (e) e.preventDefault();
+      document.getElementById('account-dropdown')?.classList.remove('show');
+      let orders = [];
+      try {
+        const res = await fetch('/api/orders/', { credentials: 'same-origin' });
+        if (res.ok) {
+          const data = await res.json();
+          orders = data.orders || [];
+        }
+      } catch { }
+
+      const statusBadge = (s) => {
+        const labels = {
+          awaiting_confirmation: 'Waiting for confirmation',
+          confirmed: 'Confirmed',
+          rejected: 'Rejected',
+          pending_payment: 'Pending payment',
+        };
+        return labels[s] || s;
+      };
+
+      const ordersHtml = orders.length === 0
+        ? `<p style='text-align:center; margin:20px 0;'>You haven't placed any orders yet.</p>`
+        : orders.map(o => `
+            <div style="border:1px solid #eaeaea; padding:15px; border-radius:12px; margin-bottom:15px; background:#fcfcfc;">
+              <h4 style="margin-bottom:6px;">${o.order_number}
+                <span style="font-size:0.75rem; background:#111; color:#fff; padding:2px 8px; border-radius:4px; margin-left:6px;">${statusBadge(o.status)}</span>
+              </h4>
+              <p style="font-size:0.85rem; color:#666;">${o.created_at}</p>
+              <p style="font-weight:600; margin:8px 0;">₹${Number(o.total_amount).toLocaleString('en-IN')}</p>
+              <p style="font-size:0.85rem;">${(o.items || []).map(i => `${i.quantity || 1}× ${escapeHtml(i.name)}`).join(', ')}</p>
+            </div>
+          `).join('');
+
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay active';
+      modal.innerHTML = `
+        <div class="auth-modal-box admin-box" style="max-width:550px; width:90%; max-height:85vh; overflow-y:auto; padding:30px;">
+          <button type="button" class="modal-close">&times;</button>
+          <div class="modal-header" style="margin-bottom:25px;"><h2>MY ORDERS</h2></div>
+          <div style="width:100%; text-align:left;">${ordersHtml}</div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.querySelector('.modal-close')?.addEventListener('click', () => modal.remove());
+      modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
+  };
+
+  const checkoutBtn = document.querySelector('.btn-checkout');
+  if (checkoutBtn) {
+      checkoutBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (!window.userAuthStatus.is_authenticated) {
+              showToast('Please log in to checkout.', 'error');
+              const loginModal = document.getElementById('login-modal');
+              if (loginModal) {
+                loginModal.classList.add('active');
+                loginModal.setAttribute('aria-hidden', 'false');
+              }
+              return;
+          }
+          if (cart.length === 0) {
+              showToast('Your cart is empty!', 'error');
+              return;
+          }
+          saveCartToSession();
+          toggleCart();
+          window.location.href = '/checkout/';
+      });
+  }
+
+  let currentSlideIndex = 0;
+  const slider = document.getElementById('slider');
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+
+  if(slides.length > 0) {
+    slides[0].classList.add('active');
+  }
+
+  function updateSliderPosition() {
+    if (!slider) return;
+    slider.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
+    slides.forEach(slide => slide.classList.remove('active'));
+    setTimeout(() => {
+      slides[currentSlideIndex].classList.add('active');
+    }, 10);
+  }
+
+  window.moveSlide = function(direction) {
+    currentSlideIndex += direction;
+    if (currentSlideIndex >= totalSlides) currentSlideIndex = 0;
+    else if (currentSlideIndex < 0) currentSlideIndex = totalSlides - 1;
+    updateSliderPosition();
+  }
+
+});
