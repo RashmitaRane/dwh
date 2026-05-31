@@ -88,13 +88,13 @@
         <div class="qr-wrap">
           <img id="payment-qr" src="" alt="Payment QR code" width="220" height="220">
         </div>
-        <p class="payment-upi-hint">UPI payment — upload bank/UPI receipt as PDF after paying</p>
+        <p class="payment-upi-hint">UPI payment — upload bank/UPI receipt image after paying</p>
       </div>
 
       <form id="checkout-payment-form" class="checkout-form">
         <div class="input-group">
-          <label class="file-label" for="payment-pdf">Upload payment proof (PDF only, max 5MB)</label>
-          <input type="file" id="payment-pdf" name="payment_proof" accept="application/pdf,.pdf" required>
+          <label class="file-label" for="payment-proof">Upload payment proof (JPG / JPEG / PNG only, max 5MB)</label>
+          <input type="file" id="payment-proof" name="payment_proof" accept="image/png,image/jpeg,image/jpg" required>
         </div>
         <button type="submit" class="auth-submit-btn">Submit payment</button>
         <button type="button" class="checkout-back-btn" id="back-to-address">← Edit address</button>

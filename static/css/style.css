@@ -848,9 +848,11 @@ header.scrolled .header-icons i {
   transform: translateX(-50%);
   background-color: #fff;
   min-width: 180px;
+  min-width: 160px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
   border-radius: 8px;
   padding: 10px 0;
+  padding: 8px 0;
   display: none; 
   z-index: 3000;
   margin-top: 12px;
@@ -872,13 +874,27 @@ header.scrolled .header-icons i {
   }
 }
 
+.dropdown-header {
+  text-align: center;
+  font-weight: 600;
+  padding: 5px 20px 12px;
+  padding: 5px 15px 8px;
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #eee;
+  color: var(--primary-color);
+}
+
 .profile-dropdown a {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 12px 20px;
+  padding: 8px 15px;
   color: var(--primary-color) !important; 
   font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: background 0.2s;
 }
 
@@ -889,6 +905,7 @@ header.scrolled .header-icons i {
 
 .profile-dropdown a i {
   font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 /* --- Cart Sidebar Styles --- */
@@ -931,6 +948,18 @@ header.scrolled .header-icons i {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.cart-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--primary-color);
+  transition: color 0.3s ease;
+}
+.cart-close-btn:hover {
+  color: var(--accent-color);
 }
 
 .cart-content {
@@ -989,6 +1018,23 @@ header.scrolled .header-icons i {
   text-transform: uppercase;
   letter-spacing: 1px;
   cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-cancel-cart {
+  width: 100%;
+  padding: 15px;
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.3s;
+}
+.btn-cancel-cart:hover {
+  background: #e5e5e5;
 }
 
 /* --- Shared User Login Modal & Premium Forms --- */
@@ -1376,4 +1422,79 @@ body.modal-open {
 @keyframes slideInUp {
   from { opacity: 0; transform: translateY(100%); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================
+   FULL PAGE MODAL OVERLAYS (Orders, Profile, Wishlist)
+   ========================================= */
+body.full-page-modal-open {
+  overflow: hidden !important;
+}
+
+body.full-page-modal-open header {
+  position: fixed !important;
+  top: 38px !important;
+  background-color: var(--bg-color) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+  z-index: 10100 !important;
+}
+
+body.full-page-modal-open header .logo {
+  width: 40px !important;  
+  height: 40px !important; 
+}
+
+body.full-page-modal-open header nav a,
+body.full-page-modal-open header .header-icons a,
+body.full-page-modal-open header .header-icons .account-wrapper,
+body.full-page-modal-open header .cart-wrapper,
+body.full-page-modal-open header .header-icons i {
+  color: var(--text-color) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.modal-overlay.full-page-modal {
+  background-color: #fafafa;
+  z-index: 10050; 
+  padding: 120px 5% 40px; 
+  align-items: flex-start;
+}
+
+.modal-overlay.full-page-modal .auth-modal-box {
+  width: 100% !important;
+  max-width: 900px !important;
+  margin: 0 auto;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  max-height: none;
+  overflow: visible;
+}
+
+.modal-overlay.full-page-modal .modal-header {
+  background: transparent !important;
+  border-bottom: 2px solid #eaeaea !important;
+  padding: 0 0 15px 0 !important;
+  margin-bottom: 25px !important;
+  position: relative;
+  text-align: left;
+}
+
+.modal-overlay.full-page-modal .modal-header h2 {
+  justify-content: flex-start !important;
+  font-size: 1.8rem !important;
+  color: #111;
+  margin: 0;
+}
+
+.modal-overlay.full-page-modal .modal-close {
+  top: 0;
+  right: 0;
+  font-size: 2rem;
+  color: #888;
+}
+
+.modal-overlay.full-page-modal .modal-close:hover {
+  color: #111;
 }

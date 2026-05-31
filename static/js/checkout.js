@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  const cart = JSON.parse(sessionStorage.getItem('dwh_cart') || '[]');
+  const cart = JSON.parse(localStorage.getItem('dwh_cart') || '[]');
   if (!cart.length) {
     window.location.href = '/catalog.html';
     return;
@@ -15,9 +15,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   const districtSelect = document.getElementById('checkout-district');
   const addressForm = document.getElementById('checkout-address-form');
   const paymentForm = document.getElementById('checkout-payment-form');
+  const paymentTypeSelect = document.getElementById('payment-type-select');
   const alertBox = document.getElementById('checkout-alert');
 
   let orderTotal = 0;
+  let selectedPaymentType = 'full';
+
+  function computeHalfPaymentAmount(price) {
+    const value = Number(price) || 0;
+    // Use the custom half-payment rule: ~63.33% of the watch price,
+    // e.g. ₹3,000 becomes ₹1,900 per watch.
+    return Math.max(0, Math.round(value * 0.6333333));
+  }
+
+  function getAmountToPay(items, type) {
+    return items.reduce((sum, item) => {
+      const quantity = Number(item.quantity || 1) || 1;
+      const price = Number(item.price) || 0;
+      if (type === 'half') {
+        return sum + computeHalfPaymentAmount(price) * quantity;
+      }
+      return sum + price * quantity;
+    }, 0);
+  }
 
   function showAlert(msg, type = 'error') {
     alertBox.hidden = false;
@@ -62,18 +82,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     const box = document.getElementById('checkout-cart-summary');
     if (!box) return;
     orderTotal = cart.reduce((sum, item) => sum + Number(item.price) * (item.quantity || 1), 0);
-    const lines = cart.map(item =>
-      `<div class="checkout-line"><span>${item.quantity || 1}× ${item.name}</span><span>₹${(Number(item.price) * (item.quantity || 1)).toLocaleString('en-IN')}</span></div>`
-    ).join('');
+    const lines = cart.map(item => {
+      const qty = Number(item.quantity || 1) || 1;
+      return `<div class="checkout-line"><span>${qty}× ${item.name}</span><span>₹${(Number(item.price) * qty).toLocaleString('en-IN')}</span></div>`;
+    }).join('');
     box.innerHTML = `
       <h3>Order summary</h3>
       ${lines}
       <div class="checkout-line total"><span>Total</span><span>₹${orderTotal.toLocaleString('en-IN')}</span></div>
     `;
+    updatePaymentAmount();
+  }
+
+  function updatePaymentAmount() {
     const amountEl = document.getElementById('payment-amount-display');
     const qrImg = document.getElementById('payment-qr');
-    if (amountEl) amountEl.textContent = `₹ ${orderTotal.toLocaleString('en-IN')}`;
-    if (qrImg) qrImg.src = `/api/payment-qr/?amount=${orderTotal}`;
+    if (!amountEl || !qrImg) return;
+
+    selectedPaymentType = paymentTypeSelect?.value || 'full';
+    const amountToPay = getAmountToPay(cart, selectedPaymentType);
+    amountEl.textContent = `₹ ${amountToPay.toLocaleString('en-IN')}`;
+    qrImg.src = `/api/payment-qr/?amount=${amountToPay}`;
   }
 
   async function loadProfile() {
@@ -99,6 +128,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       districtSelect.innerHTML = getDistrictOptions(stateSelect.value);
     }
   });
+
+  paymentTypeSelect?.addEventListener('change', updatePaymentAmount);
 
   addressForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -126,14 +157,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   paymentForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const fileInput = document.getElementById('payment-pdf');
+    const fileInput = document.getElementById('payment-proof');
     const file = fileInput?.files?.[0];
     if (!file) {
-      showAlert('Please upload your payment PDF.');
+      showAlert('Please upload your payment screenshot.');
       return;
     }
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      showAlert('Only PDF files are allowed.');
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      showAlert('Only JPG and PNG images are allowed.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showAlert('The image size exceeds the 5MB limit. Please upload a smaller image.');
       return;
     }
 
@@ -147,6 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const body = new FormData();
     body.append('items', JSON.stringify(items));
     body.append('payment_proof', file);
+    body.append('payment_type', paymentTypeSelect?.value || 'full');
 
     const btn = paymentForm.querySelector('button[type="submit"]');
     if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
@@ -158,10 +194,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         credentials: 'same-origin',
         body,
       });
-      const data = await res.json();
+      
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (err) {
+        throw new Error(`Server error (${res.status}): Expected JSON but received HTML. Please check your Django terminal for the actual Python error.`);
+      }
+      
       if (!res.ok) throw new Error(data.message || 'Payment submission failed.');
 
-      sessionStorage.removeItem('dwh_cart');
+      localStorage.removeItem('dwh_cart');
       document.getElementById('success-order-number').textContent = data.order?.order_number || '';
       document.getElementById('success-message').textContent =
         'Your payment proof was received. Waiting for owner confirmation.';
@@ -173,14 +216,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 });
-function updatePaymentAmount() {
-    const select = document.getElementById('payment-type-select');
-    const display = document.getElementById('payment-amount-display');
-    const total = orderTotal; // Your existing total variable
-    
-    const amountToPay = select.value === 'half' ? total / 2 : total;
-    display.textContent = `₹ ${amountToPay.toLocaleString('en-IN')}`;
-    
-    // Update the QR code dynamically for the new amount
-    document.getElementById('payment-qr').src = `/api/payment-qr/?amount=${amountToPay}`;
-}

@@ -83,6 +83,7 @@ def _order_payload(order, request):
             'country': order.country,
         },
         'payment_proof_url': payment_url,
+        'payment_type': order.payment_type,
         'admin_note': order.admin_note,
         'created_at': order.created_at.strftime('%d %b %Y, %I:%M %p'),
     }
@@ -155,19 +156,23 @@ def submit_order_api(request):
 
     payment_file = request.FILES.get('payment_proof')
     if not payment_file:
-        return JsonResponse({'message': 'Please upload payment PDF.'}, status=400)
+        return JsonResponse({'message': 'Please upload payment image.'}, status=400)
 
     if payment_file.size > 5 * 1024 * 1024:
-        return JsonResponse({'message': 'PDF must be under 5 MB.'}, status=400)
+        return JsonResponse({'message': 'Image must be under 5 MB.'}, status=400)
 
-    if not payment_file.name.lower().endswith('.pdf'):
-        return JsonResponse({'message': 'Only PDF files are allowed.'}, status=400)
+    if not payment_file.name.lower().endswith(('.jpg', '.jpeg', '.png')):
+        return JsonResponse({'message': 'Only JPG and PNG images are allowed.'}, status=400)
 
     profile = _get_or_create_profile(request.user)
     required = ['first_name', 'phone', 'flat_no', 'area', 'city', 'state', 'pincode']
     for field in required:
         if not getattr(profile, field, ''):
             return JsonResponse({'message': 'Please complete your delivery address.'}, status=400)
+
+    payment_type = request.POST.get('payment_type', 'full')
+    if payment_type not in dict(StoreOrder.PAYMENT_TYPE_CHOICES):
+        payment_type = 'full'
 
     try:
         total = Decimal('0')
@@ -182,6 +187,7 @@ def submit_order_api(request):
         user=request.user,
         items=items,
         total_amount=total,
+        payment_type=payment_type,
         first_name=profile.first_name,
         last_name=profile.last_name,
         phone=profile.phone,
@@ -193,7 +199,7 @@ def submit_order_api(request):
         pincode=profile.pincode,
         landmark=profile.landmark,
         country=profile.country or 'India',
-        status=StoreOrder.STATUS_AWAITING_CONFIRMATION,
+        status='awaiting_confirmation',
         payment_proof=payment_file,
     )
 
@@ -346,25 +352,6 @@ def admin_order_reject_api(request, order_id):
 
     return JsonResponse({'message': 'Order rejected.', 'order': _order_payload(order, request)})
 
-# In store/order_views.py
-
-@user_passes_test(staff_check)
-@require_POST
-def admin_update_status_api(request, order_id):
-    data = _parse_json(request)
-    new_status = data.get('status') # 'shipped' or 'delivered'
-    
-    order = StoreOrder.objects.get(pk=order_id)
-    order.status = new_status
-    order.save()
-    
-    # Notify User via Notification Model
-    Notification.objects.create(
-        user=order.user,
-        order=order,
-        message=f"Your order {order.order_number} status is now: {order.status_label}"
-    )
-    return JsonResponse({'message': 'Status updated successfully'})
 
 # In store/order_views.py
 

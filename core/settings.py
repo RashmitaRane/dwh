@@ -128,3 +128,7 @@ if not DEBUG:
 else:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+STATIC_URL = '/static/'
+# Add these lines for media files (user uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

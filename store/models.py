@@ -54,18 +54,23 @@ class UserProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 class StoreOrder(models.Model):
-   
     PAYMENT_TYPE_CHOICES = [
         ('full', 'Full Payment'),
         ('half', 'Half Advance Payment'),
     ]
-    
+
+    STATUS_AWAITING_CONFIRMATION = 'awaiting_confirmation'
+    STATUS_CONFIRMED = 'confirmed'
+    STATUS_SHIPPED = 'shipped'
+    STATUS_DELIVERED = 'delivered'
+    STATUS_REJECTED = 'rejected'
+
     STATUS_CHOICES = [
-        ('awaiting_confirmation', 'Awaiting Confirmation'),
-        ('confirmed', 'Confirmed'),
-        ('shipped', 'Shipped'),      # NEW
-        ('delivered', 'Delivered'),  # NEW
-        ('rejected', 'Rejected'),
+        (STATUS_AWAITING_CONFIRMATION, 'Awaiting Confirmation'),
+        (STATUS_CONFIRMED, 'Confirmed'),
+        (STATUS_SHIPPED, 'Shipped'),
+        (STATUS_DELIVERED, 'Delivered'),
+        (STATUS_REJECTED, 'Rejected'),
     ]
 
     payment_type = models.CharField(max_length=10, choices=PAYMENT_TYPE_CHOICES, default='full')
@@ -87,7 +92,7 @@ class StoreOrder(models.Model):
     country = models.CharField(max_length=80, default='India')
 
     status = models.CharField(max_length=32, choices=STATUS_CHOICES, default='awaiting_confirmation')
-    payment_proof = models.FileField(upload_to='payments/', blank=True, null=True, validators=[FileExtensionValidator(allowed_extensions=['pdf'])])
+    payment_proof = models.FileField(upload_to='payments/', blank=True, null=True, validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])])
     admin_note = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
