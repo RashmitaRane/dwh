@@ -1,5 +1,7 @@
 import json
 import io
+import os
+import uuid
 from decimal import Decimal, InvalidOperation
 
 import qrcode
@@ -163,6 +165,10 @@ def submit_order_api(request):
 
     if not payment_file.name.lower().endswith(('.jpg', '.jpeg', '.png')):
         return JsonResponse({'message': 'Only JPG and PNG images are allowed.'}, status=400)
+
+    # Sanitize file name by converting it to a secure UUID
+    ext = os.path.splitext(payment_file.name)[1].lower()
+    payment_file.name = f"{uuid.uuid4()}{ext}"
 
     profile = _get_or_create_profile(request.user)
     required = ['first_name', 'phone', 'flat_no', 'area', 'city', 'state', 'pincode']

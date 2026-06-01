@@ -277,14 +277,16 @@ async function loadBestSellers() {
         const bestSellers = data.products.slice(0, 3);
         
         bestSellers.forEach(p => {
+            const safeName = escapeHtml(p.name || '');
+            const safeImgAttr = escapeHtml(p.image_url || p.image || '');
             grid.innerHTML += `
                 <div class="product-card reveal-card">
                     <div class="product-image-wrapper">
                         <div class="badge">Bestseller</div>
-                        <img src="${p.image_url || p.image}" alt="${p.name}" class="img-main">
+                        <img src="${safeImgAttr}" alt="${safeName}" class="img-main">
                     </div>
                     <div class="product-info">
-                        <h3>${p.name}</h3>
+                        <h3>${safeName}</h3>
                         <div class="price">₹${parseFloat(p.price).toLocaleString()}</div>
                         <button type="button" class="btn-add" onclick="indexAddToCart()">Add to cart</button>
                     </div>
@@ -416,11 +418,18 @@ function updateHeaderUI() {
     // 1. Build the menu HTML based on login status
     if (authStatus.is_admin || authStatus.is_staff) {
         dropdown.innerHTML = `
-          <div style="padding: 10px 20px; border-bottom: 1px solid #eee; background: #f9f9f9;"><strong>Admin Panel</strong></div>
-          <a href="/staff/orders/" style="display:block; padding:12px 20px; color:#333; text-decoration:none;">Orders & payments</a>
-          <a href="/admin/" style="display:block; padding:12px 20px; color:#333; text-decoration:none;">Django Admin</a>
+          <a href="/staff/orders/" style="display:block; padding:12px 20px; color:#333; text-decoration:none;">Orders & Inventory</a>
           <a href="/logout/" style="display:block; padding:12px 20px; color:#c0392b; text-decoration:none;">Logout</a>
         `;
+        
+        // Hide the cart icon from the header for admins (override the CSS !important rule)
+        document.querySelectorAll('.cart-wrapper, [onclick="toggleCart()"]').forEach(btn => {
+            btn.style.setProperty('display', 'none', 'important');
+        });
+        if (document.getElementById('cart-badge')) {
+            document.getElementById('cart-badge').parentElement.style.setProperty('display', 'none', 'important');
+        }
+
     } else if (authStatus.is_authenticated) {
         dropdown.innerHTML = `
           <div style="padding: 10px 20px; border-bottom: 1px solid #eee; background: #f9f9f9;"><strong>My Account</strong></div>
@@ -557,10 +566,16 @@ document.addEventListener('DOMContentLoaded', () => {
     adminLoginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if(adminLoginStatus) adminLoginStatus.textContent = "Authenticating...";
-      const payload = { admin_email: adminLoginForm.admin_email.value.trim(), admin_password: adminLoginForm.admin_password.value };
+      
+      const emailField = adminLoginForm.querySelector('[name="admin_email"]') || adminLoginForm.querySelector('[name="email"]') || adminLoginForm.querySelector('input[type="email"]');
+      const passField = adminLoginForm.querySelector('[name="admin_password"]') || adminLoginForm.querySelector('[name="password"]') || adminLoginForm.querySelector('input[type="password"]');
+      const payload = { 
+          admin_email: emailField ? emailField.value.trim() : '', 
+          admin_password: passField ? passField.value : '' 
+      };
       try {
         await postJson('/api/admin-login/', payload);
-        window.location.href = '/admin-dashboard/';
+        window.location.href = '/staff/orders/';
       } catch (error) {
         if(adminLoginStatus) adminLoginStatus.textContent = error.message || 'Invalid admin credentials.';
       }
@@ -579,15 +594,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeLoginBtn = document.getElementById('login-modal-close');
   if(closeLoginBtn) closeLoginBtn.addEventListener('click', () => loginModal.classList.remove('active'));
 
-  const adminLoginLinks = document.querySelectorAll('.admin-login-link');
   const adminModal = document.getElementById('admin-login-modal');
-  adminLoginLinks.forEach(link => {
+  
+  // Attach event listener directly to all admin login links
+  document.querySelectorAll('.admin-login-link, [href="#admin-login"]').forEach(link => {
       link.addEventListener('click', (e) => {
           e.preventDefault();
-          if(loginModal) loginModal.classList.remove('active');
-          if(adminModal) adminModal.classList.add('active');
+          if (loginModal) loginModal.classList.remove('active');
+          if (adminModal) {
+              adminModal.classList.add('active');
+              adminModal.setAttribute('aria-hidden', 'false');
+          }
       });
   });
+
   const closeAdminBtn = document.getElementById('admin-modal-close');
   if(closeAdminBtn) closeAdminBtn.addEventListener('click', () => adminModal.classList.remove('active'));
 

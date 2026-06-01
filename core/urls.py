@@ -40,6 +40,9 @@ urlpatterns = [
     path('api/staff/notifications/', order_views.admin_notifications_api, name='admin_notifications'),
     path('api/staff/orders/<int:order_id>/confirm/', order_views.admin_order_confirm_api, name='admin_order_confirm'),
     path('api/staff/orders/<int:order_id>/reject/', order_views.admin_order_reject_api, name='admin_order_reject'),
+    path('api/staff/products/add/', views.admin_add_product, name='admin_add_product'),
+    path('api/staff/products/<int:product_id>/delete/', views.admin_delete_product, name='admin_delete_product'),
+    path('api/staff/products/<int:product_id>/edit/', views.admin_edit_product, name='admin_edit_product'),
 ]
 from django.conf import settings
 from django.conf.urls.static import static

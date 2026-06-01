@@ -147,18 +147,33 @@ function renderAllOrders() {
 function renderInventory() {
     const tbody = document.querySelector('#inventory-table tbody');
     
+    const container = document.querySelector('#inventory-table').parentElement;
+    if (!document.getElementById('add-product-btn')) {
+        const addBtn = document.createElement('button');
+        addBtn.id = 'add-product-btn';
+        addBtn.className = 'btn-action btn-success';
+        addBtn.style.marginBottom = '15px';
+        addBtn.innerHTML = '<i class="ph ph-plus"></i> Add New Product';
+        addBtn.onclick = openAddProductModal;
+        container.insertBefore(addBtn, document.querySelector('#inventory-table'));
+    }
+
     if (allProducts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No products in inventory. Add one to get started.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No products in inventory. Add one to get started.</td></tr>';
         return;
     }
 
     tbody.innerHTML = allProducts.map(p => `
         <tr>
-            <td><img src="${p.image_url || p.image}" alt="${p.name}" class="table-img"></td>
+            <td><img src="${p.image_url || p.image}" alt="${p.name}" class="table-img" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;"></td>
             <td style="font-weight:500;">${p.name}</td>
             <td>${p.brand}</td>
             <td style="font-weight:600;">₹${parseFloat(p.price).toLocaleString('en-IN')}</td>
             <td>${p.is_bestseller ? '<span class="status-badge" style="background:#111; color:#fff;">Yes</span>' : '<span style="color:#aaa;">No</span>'}</td>
+            <td>
+                <button onclick="editProduct(${p.id})" class="btn-action btn-outline" style="padding: 6px; margin-right: 5px;"><i class="ph ph-pencil"></i> Edit</button>
+                <button onclick="deleteProduct(${p.id})" class="btn-action btn-danger" style="padding: 6px;"><i class="ph ph-trash"></i></button>
+            </td>
         </tr>
     `).join('');
 }
@@ -193,3 +208,133 @@ async function actOnOrder(id, action, note = '') {
         alert("Error: " + err.message);
     }
 }
+
+window.deleteProduct = async function(id) {
+    if(!confirm("Are you sure you want to delete this product?")) return;
+    try {
+        const res = await fetch(`/api/staff/products/${id}/delete/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCsrfToken() },
+            credentials: 'same-origin'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Action failed.');
+        
+        alert("Success: " + data.message);
+        await loadDashboardData();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+};
+
+window.openAddProductModal = function() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+        <div class="auth-modal-box admin-box" style="width:400px; max-height: 90vh; overflow-y: auto;">
+            <button type="button" class="modal-close" aria-label="Close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+            <div class="modal-header"><h2>ADD PRODUCT</h2></div>
+            <form id="add-product-form" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="input-group"><input type="text" name="name" placeholder="Product Name" required></div>
+                <div class="input-group"><input type="text" name="brand" placeholder="Brand (e.g. HMT)" value="HMT" required></div>
+                <div class="input-group"><input type="number" name="price" placeholder="Price" required step="0.01"></div>
+                <div class="input-group" style="display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" name="is_bestseller" id="is_bestseller" style="width:auto;">
+                    <label for="is_bestseller" style="color:#333; font-size: 0.9rem;">Mark as Bestseller?</label>
+                </div>
+                <div class="input-group">
+                    <label style="font-size:0.85rem; color:#666; margin-bottom:5px; display:block;">Main Product Image</label>
+                    <input type="file" name="image" accept="image/jpeg,image/png,image/webp">
+                </div>
+                <div class="input-group" style="margin-bottom: 5px;">
+                    <label style="font-size:0.85rem; color:#666; margin-bottom:5px; display:block;">Product Gallery Images (Optional)</label>
+                    <input type="file" name="gallery_images" accept="image/jpeg,image/png,image/webp" multiple>
+                    <span style="font-size:0.75rem; color:#888; display:block; margin-top:4px;">Hold Ctrl/Cmd to select multiple images.</span>
+                </div>
+                <button type="submit" class="auth-submit-btn admin-btn">Save Product</button>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('add-product-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        formData.set('is_bestseller', e.target.is_bestseller.checked ? 'true' : 'false');
+        
+        try {
+            const res = await fetch('/api/staff/products/add/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCsrfToken() },
+                credentials: 'same-origin',
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Action failed.');
+            alert("Success: " + data.message);
+            modal.remove();
+            await loadDashboardData();
+        } catch (err) {
+            alert("Error: " + err.message);
+        }
+    });
+};
+
+window.editProduct = function(id) {
+    const product = allProducts.find(p => p.id === id);
+    if (!product) return;
+
+    const safeName = (product.name || '').replace(/"/g, '&quot;');
+    const safeBrand = (product.brand || '').replace(/"/g, '&quot;');
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+        <div class="auth-modal-box admin-box" style="width:400px; max-height: 90vh; overflow-y: auto;">
+            <button type="button" class="modal-close" aria-label="Close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+            <div class="modal-header"><h2>EDIT PRODUCT</h2></div>
+            <form id="edit-product-form" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="input-group"><input type="text" name="name" placeholder="Product Name" value="${safeName}" required></div>
+                <div class="input-group"><input type="text" name="brand" placeholder="Brand (e.g. HMT)" value="${safeBrand}" required></div>
+                <div class="input-group"><input type="number" name="price" placeholder="Price" value="${product.price}" required step="0.01"></div>
+                <div class="input-group" style="display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" name="is_bestseller" id="edit_is_bestseller" style="width:auto;" ${product.is_bestseller ? 'checked' : ''}>
+                    <label for="edit_is_bestseller" style="color:#333; font-size: 0.9rem;">Mark as Bestseller?</label>
+                </div>
+                <div class="input-group">
+                    <label style="font-size:0.85rem; color:#666; margin-bottom:5px; display:block;">Update Main Product Image (Leave empty to keep current)</label>
+                    <input type="file" name="image" accept="image/jpeg,image/png,image/webp">
+                </div>
+                <div class="input-group" style="margin-bottom: 5px;">
+                    <label style="font-size:0.85rem; color:#666; margin-bottom:5px; display:block;">Add Gallery Images</label>
+                    <input type="file" name="gallery_images" accept="image/jpeg,image/png,image/webp" multiple>
+                    <span style="font-size:0.75rem; color:#888; display:block; margin-top:4px;">Select additional images to append to the gallery.</span>
+                </div>
+                <button type="submit" class="auth-submit-btn admin-btn">Update Product</button>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('edit-product-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        formData.set('is_bestseller', e.target.is_bestseller.checked ? 'true' : 'false');
+        
+        try {
+            const res = await fetch(`/api/staff/products/${id}/edit/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCsrfToken() },
+                credentials: 'same-origin',
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Action failed.');
+            alert("Success: " + data.message);
+            modal.remove();
+            await loadDashboardData();
+        } catch (err) {
+            alert("Error: " + err.message);
+        }
+    });
+};
